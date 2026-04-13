@@ -65,7 +65,7 @@
         .modal.show { display: flex; }
         .modal-content { background: #222; padding: 20px; border-radius: 16px; width: 85%; max-width: 320px; }
         .modal-title { text-align: center; margin-bottom: 16px; font-size: 17px; }
-        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 15px; cursor: pointer; display: block; margin: 16px auto; text-align: center; }
+        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 12px 32px; border-radius: 24px; font-size: 15px; cursor: pointer; display: block; margin: 16px auto 0; width: fit-content; }
         .voice-btn.recording { background: #f44336; animation: pulse 1s infinite; }
         .audio-btns { display: none; gap: 8px; justify-content: center; margin-top: 12px; }
         .play-btn { background: #2196F3; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; font-size: 14px; }
@@ -160,10 +160,9 @@
                     div.className = 'slot used';
                     var content = '<div>' + slot.day + '日 ' + slot.time + '</div>';
                     if (audios[i]) {
-                        content += '<div class="audio-icon" onclick="event.stopPropagation();playAudio(' + i + ')">请假理由</div>';
+                        content += '<div class="audio-icon" onclick="event.stopPropagation();playAudio(' + i + ')">📢 播放理由</div>';
                     }
                     div.innerHTML = content;
-                    used++;
                 } else {
                     div.className = 'slot free';
                     div.innerHTML = '<span class="time">请假</span>';
@@ -173,6 +172,15 @@
                 })(i);
                 grid.appendChild(div);
             }
+            
+            // Sort: used slots first
+            var slots = Array.from(grid.children);
+            slots.sort(function(a, b) {
+                if (a.className.includes('used') && !b.className.includes('used')) return -1;
+                if (!a.className.includes('used') && b.className.includes('used')) return 1;
+                return 0;
+            });
+            slots.forEach(function(s) { grid.appendChild(s); });
             
             var list = document.getElementById('historyItems');
             list.innerHTML = '';
