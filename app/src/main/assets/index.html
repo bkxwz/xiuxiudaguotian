@@ -264,19 +264,24 @@
             render();
         }
 
-        function toggleRecord() {
+function toggleRecord() {
             var btn = document.getElementById('voiceBtn');
             if (isRecording) {
-                mediaRecorder.stop();
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(function(t) { t.stop(); });
+                }
                 btn.classList.remove('recording');
-                btn.textContent = '🎤 录音';
+                btn.textContent = '🎤 请假理由';
                 isRecording = false;
             } else {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(function(stream) {
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };
                     mediaRecorder.onstop = function() {
+                        stream.getTracks().forEach(function(t) { t.stop(); });
                         currentAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         var reader = new FileReader();
                         reader.onloadend = function() {
@@ -289,10 +294,12 @@
                     btn.classList.add('recording');
                     btn.textContent = '🎤 录音中...';
                     isRecording = true;
-                }).catch(function(e) {
-                    alert('无法访问麦克风: ' + e.message);
+                })
+                .catch(function(e) {
+                    alert('无法访问麦克风: ' + e.message + '. 请在设置中允许录音权限');
                 });
             }
+        }
         }
         
         function showAudioPreview() {

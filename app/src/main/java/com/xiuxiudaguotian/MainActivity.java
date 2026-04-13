@@ -41,11 +41,21 @@ public class MainActivity extends AppCompatActivity {
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(false);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
         
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
                 request.grant(request.getResources());
+            }
+            
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, android.webkit.GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
             }
         });
         
