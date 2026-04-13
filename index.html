@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>休息大过天</title>
     <style>
         * { margin: 0; padding: 0; }
@@ -54,10 +54,7 @@
         }
         .slot.free { background: #3d7a4f; }
         .slot.used { background: #444; }
-        .slot .audio-icon { font-size: 16px; margin-top: 4px; display: block; }
-        .slot.used:hover { background: #555; }
-        
-        .remain { text-align: center; color: #888; padding: 12px; }
+        .slot .audio-icon { font-size: 16px; margin-top: 8px; display: block; }
         
         .history { padding: 12px 16px; background: #222; }
         .history-title { color: #666; font-size: 13px; margin-bottom: 10px; }
@@ -68,12 +65,12 @@
         .modal.show { display: flex; }
         .modal-content { background: #222; padding: 20px; border-radius: 16px; width: 85%; max-width: 320px; }
         .modal-title { text-align: center; margin-bottom: 16px; font-size: 17px; }
-        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 10px 20px; border-radius: 24px; font-size: 14px; cursor: pointer; }
+        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 15px; cursor: pointer; display: block; margin: 16px auto; }
         .voice-btn.recording { background: #f44336; animation: pulse 1s infinite; }
-        .audio-btns { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
-        .play-btn { background: #2196F3; padding: 8px 16px; border-radius: 20px; border: none; color: #fff; font-size: 13px; }
-        .re-record-btn { background: #f44336; padding: 8px 16px; border-radius: 20px; border: none; color: #fff; font-size: 13px; }
-        .audio-status { text-align: center; color: #4CAF50; margin-bottom: 8px; font-size: 13px; }
+        .audio-btns { display: none; gap: 8px; justify-content: center; margin-top: 12px; }
+        .play-btn { background: #2196F3; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; font-size: 14px; }
+        .re-record-btn { background: #f44336; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; font-size: 14px; }
+        .audio-status { text-align: center; color: #4CAF50; margin-top: 8px; font-size: 14px; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .day-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
         .day-btn { aspect-ratio: 1; background: #333; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; }
@@ -110,13 +107,11 @@
                 <label><input type="radio" name="time" value="上午" checked> 上午</label>
                 <label><input type="radio" name="time" value="下午"> 下午</label>
             </div>
-            <div style="text-align:center;margin:12px 0">
-                <button class="voice-btn" id="voiceBtn" onclick="toggleRecord()">🎤 请假理由</button>
-                <div class="audio-status" id="audioStatus"></div>
-                <div class="audio-btns" id="audioBtns" style="display:none">
-                    <button class="play-btn" onclick="playCurrent()">▶ 试听</button>
-                    <button class="re-record-btn" onclick="reRecord()">🔄 重录</button>
-                </div>
+            <button class="voice-btn" id="voiceBtn" onclick="toggleRecord()">🎤 请假理由</button>
+            <div class="audio-status" id="audioStatus"></div>
+            <div class="audio-btns" id="audioBtns">
+                <button class="play-btn" onclick="playCurrent()">▶ 试听</button>
+                <button class="re-record-btn" onclick="reRecord()">🔄 重录</button>
             </div>
             <div class="actions">
                 <button class="btn btn-cancel" onclick="closeModal()">取消</button>
@@ -132,12 +127,10 @@
         var selDay = 0;
         var isRecording = false;
         var tempAudio = null;
-        var currentAudioBlob = null;
+        var audios = {};
 
         function getKey() { return 'leave_' + currentMonth; }
         function getData() { var d = localStorage.getItem(getKey()); return d ? JSON.parse(d) : []; }
-        function saveDataEx(data) { localStorage.setItem(getKey(), JSON.stringify(data)); localStorage.setItem(getKey() + '_ audios', JSON.stringify(audios)); }
-        var audios = {};
         function saveData(data) { localStorage.setItem(getKey(), JSON.stringify(data)); }
 
         function changeMonth(d) {
@@ -148,16 +141,6 @@
             if (m > 12) { y++; m = 1; }
             currentMonth = y * 100 + m;
             render();
-        }
-
-        function getMaxDay() {
-            var y = Math.floor(currentMonth / 100);
-            var m = currentMonth % 100;
-            var now = new Date();
-            var nowMonth = now.getFullYear() * 100 + now.getMonth() + 1;
-            if (currentMonth === nowMonth) return now.getDate();
-            if (currentMonth > nowMonth) return 0; // 未来月份不可选
-            return new Date(y, m, 0).getDate();
         }
 
         function render() {
@@ -183,7 +166,7 @@
                     used++;
                 } else {
                     div.className = 'slot free';
-                    div.textContent = '请假';
+                    div.innerHTML = '<span class="time">请假</span>';
                 }
                 (function(idx) {
                     div.onclick = function() { openModal(idx); };
@@ -219,7 +202,7 @@
             }
             
             var today = now.getDate();
-            var startDay = Math.max(1, today - 6); // 最近一周
+            var startDay = Math.max(1, today - 6);
             var dayGrid = document.getElementById('dayGrid');
             dayGrid.innerHTML = '';
             
@@ -234,6 +217,15 @@
                 };
                 dayGrid.appendChild(btn);
             }
+            
+            // Reset audio state
+            tempAudio = null;
+            document.getElementById('voiceBtn').style.display = 'inline-block';
+            document.getElementById('voiceBtn').textContent = '🎤 请假理由';
+            document.getElementById('voiceBtn').classList.remove('recording');
+            document.getElementById('audioStatus').textContent = '';
+            document.getElementById('audioBtns').style.display = 'none';
+            
             document.getElementById('modal').classList.add('show');
         }
 
@@ -241,9 +233,6 @@
             document.getElementById('modal').classList.remove('show');
             selDay = 0;
             tempAudio = null;
-            document.getElementById('voiceBtn').style.display = 'inline-block';
-            document.getElementById('audioStatus').textContent = '';
-            document.getElementById('audioBtns').style.display = 'none';
         }
 
         function confirmSelect() {
@@ -256,13 +245,10 @@
             }
             saveData(data);
             closeModal();
-            tempAudio = null;
-            document.getElementById('audioStatus').textContent = '';
-            document.getElementById('audioBtns').style.display = 'none';
             render();
         }
 
-function toggleRecord() {
+        function toggleRecord() {
             var btn = document.getElementById('voiceBtn');
             if (isRecording) {
                 AndroidBridge.stopRecording();
@@ -277,9 +263,17 @@ function toggleRecord() {
             }
         }
         
-        function onRecordingComplete(base64Data) {
-            tempAudio = 'data:audio/3gpp;base64,' + base64Data;
-            showAudioPreview();
+        // Called from native code when recording completes
+        function onRecordingComplete(fileUrl) {
+            tempAudio = fileUrl;
+            isRecording = false;
+            var btn = document.getElementById('voiceBtn');
+            btn.classList.remove('recording');
+            btn.textContent = '🎤 请假理由';
+            btn.style.display = 'none';
+            document.getElementById('audioStatus').textContent = '✓ 录音完成';
+            document.getElementById('audioBtns').style.display = 'flex';
+            console.log('Recording complete: ' + fileUrl);
         }
         
         function onRecordingError(error) {
@@ -290,27 +284,22 @@ function toggleRecord() {
             btn.textContent = '🎤 请假理由';
         }
         
-        function onPlayRecording(base64Data) {
-            if (tempAudio) {
-                new Audio(tempAudio).play();
-            }
-        }
-        
         function playCurrent() {
+            console.log('Playing: ' + tempAudio);
             if (tempAudio) {
-                new Audio(tempAudio).play();
+                var audio = new Audio(tempAudio);
+                audio.play();
+                audio.onerror = function(e) {
+                    console.log('Play error: ' + e.message);
+                    alert('播放失败');
+                };
+            } else {
+                alert('没有录音');
             }
         }
-        
-        function showAudioPreview() {
-            document.getElementById('voiceBtn').style.display = 'none';
-            document.getElementById('audioStatus').textContent = '✓ 录音完成';
-            document.getElementById('audioBtns').style.display = 'flex';
-        }
-        
+
         function reRecord() {
             tempAudio = null;
-            currentAudioBlob = null;
             document.getElementById('voiceBtn').style.display = 'inline-block';
             document.getElementById('audioStatus').textContent = '';
             document.getElementById('audioBtns').style.display = 'none';
@@ -319,6 +308,7 @@ function toggleRecord() {
         function playAudio(idx) {
             var data = audios[idx];
             if (data) {
+                console.log('Playing audio ' + idx + ': ' + data);
                 var audio = new Audio(data);
                 audio.play();
             }

@@ -10,8 +10,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
-import android.webkit.PermissionRequest;
-import android.util.Base64;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,8 +17,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
@@ -53,12 +49,7 @@ public class MainActivity extends AppCompatActivity {
         
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onPermissionRequest(PermissionRequest request) {
-                request.grant(request.getResources());
-            }
-        });
+        webView.setWebChromeClient(new WebChromeClient());
         
         String html = loadHtmlFromAssets();
         webView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
@@ -112,22 +103,22 @@ public class MainActivity extends AppCompatActivity {
                         if (!audioDir.exists()) {
                             audioDir.mkdirs();
                         }
-                        currentFilePath = new File(audioDir, "recording_" + System.currentTimeMillis() + ".3gp").getAbsolutePath();
+                        currentFilePath = new File(audioDir, "recording_" + System.currentTimeMillis() + ".mp3").getAbsolutePath();
                         
                         mediaRecorder = new MediaRecorder();
                         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
                         mediaRecorder.setOutputFile(currentFilePath);
                         mediaRecorder.prepare();
                         mediaRecorder.start();
                         isRecording = true;
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         webView.post(new Runnable() {
                             @Override
                             public void run() {
-                                webView.evaluateJavascript("onRecordingError('" + e.getMessage() + "')", null);
+                                webView.evaluateJavascript("onRecordingError('录音启动失败: " + e.getMessage() + "')", null);
                             }
                         });
                     }
@@ -148,12 +139,12 @@ public class MainActivity extends AppCompatActivity {
                         mediaRecorder = null;
                         isRecording = false;
                         
-                        // Convert to base64 and send to JS
-                        final String base64Audio = fileToBase64(currentFilePath);
+                        // Send file path to JS - use file:// URL
+                        String fileUrl = "file://" + currentFilePath;
                         webView.post(new Runnable() {
                             @Override
                             public void run() {
-                                webView.evaluateJavascript("onRecordingComplete('" + base64Audio + "')", null);
+                                webView.evaluateJavascript("onRecordingComplete('" + fileUrl.replace("\\", "\\\\").replace("'", "\\'") + "')", null);
                             }
                         });
                     } catch (Exception e) {
@@ -161,35 +152,12 @@ public class MainActivity extends AppCompatActivity {
                         webView.post(new Runnable() {
                             @Override
                             public void run() {
-                                webView.evaluateJavascript("onRecordingError('" + e.getMessage() + "')", null);
+                                webView.evaluateJavascript("onRecordingError('录音停止失败: " + e.getMessage() + "')", null);
                             }
                         });
                     }
                 }
             });
-        }
-        
-        @JavascriptInterface
-        public void playRecording(final String base64Data) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    webView.evaluateJavascript("onPlayRecording('" + base64Data + "')", null);
-                }
-            });
-        }
-    }
-    
-    private String fileToBase64(String filePath) {
-        try {
-            File file = new File(filePath);
-            byte[] buffer = new byte[(int) file.length()];
-            FileInputStream fis = new FileInputStream(file);
-            fis.read(buffer);
-            fis.close();
-            return Base64.encodeToString(buffer, Base64.NO_WRAP);
-        } catch (Exception e) {
-            return "";
         }
     }
     
