@@ -5,8 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.webkit.GeolocationPermissions;
-import android.webkit.GeolocationPermissions.Callback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
@@ -16,6 +14,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.StringBuilder;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
@@ -45,16 +48,28 @@ public class MainActivity extends AppCompatActivity {
             public void onPermissionRequest(PermissionRequest request) {
                 request.grant(request.getResources());
             }
-            
-            @Override
-            public void onGeolocationPermissionsShowPrompt(String origin, Callback callback) {
-                callback.invoke(origin, true, false);
-            }
         });
         
-        webView.loadUrl("file:///android_asset/index.html");
+        String html = loadHtmlFromAssets();
+        webView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null, null);
         
         requestPermissions();
+    }
+    
+    private String loadHtmlFromAssets() {
+        try {
+            InputStream is = getAssets().open("index.html");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            reader.close();
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
     }
     
     private void requestPermissions() {
