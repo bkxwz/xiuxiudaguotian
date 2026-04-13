@@ -26,6 +26,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+        
         webView = new WebView(this);
         setContentView(webView);
         
