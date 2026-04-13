@@ -6,8 +6,8 @@ android {
         applicationId "com.xiuxiudaguotian"
         minSdkVersion 21
         targetSdkVersion 34
-        versionCode 31
-        versionName "1.0.4"
+        versionCode 32
+        versionName "1.0.5"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
