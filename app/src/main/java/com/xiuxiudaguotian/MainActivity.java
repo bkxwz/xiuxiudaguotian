@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
@@ -113,6 +115,31 @@ public class MainActivity extends AppCompatActivity {
                         mediaRecorder.prepare();
                         mediaRecorder.start();
                         isRecording = true;
+                        
+                        // Auto-stop after 7 seconds
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isRecording && mediaRecorder != null) {
+                                    try {
+                                        mediaRecorder.stop();
+                                        mediaRecorder.release();
+                                        mediaRecorder = null;
+                                        isRecording = false;
+                                        String fileUrl = "file://" + currentFilePath;
+                                        final String escapedUrl = fileUrl.replace("\\", "\\\\").replace("'", "\\'");
+                                        webView.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                webView.evaluateJavascript("onRecordingAutoStop('" + escapedUrl + "')", null);
+                                            }
+                                        });
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }, 7000);
                     } catch (Exception e) {
                         e.printStackTrace();
                         webView.post(new Runnable() {

@@ -65,7 +65,7 @@
         .modal.show { display: flex; }
         .modal-content { background: #222; padding: 20px; border-radius: 16px; width: 85%; max-width: 320px; }
         .modal-title { text-align: center; margin-bottom: 16px; font-size: 17px; }
-        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 15px; cursor: pointer; display: block; margin: 16px auto; }
+        .voice-btn { background: #4CAF50; border: none; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 15px; cursor: pointer; display: block; margin: 16px auto; text-align: center; }
         .voice-btn.recording { background: #f44336; animation: pulse 1s infinite; }
         .audio-btns { display: none; gap: 8px; justify-content: center; margin-top: 12px; }
         .play-btn { background: #2196F3; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; font-size: 14px; }
@@ -160,7 +160,7 @@
                     div.className = 'slot used';
                     var content = '<div>' + slot.day + '日 ' + slot.time + '</div>';
                     if (audios[i]) {
-                        content += '<div class="audio-icon" onclick="event.stopPropagation();playAudio(' + i + ')">🔊 录音</div>';
+                        content += '<div class="audio-icon" onclick="event.stopPropagation();playAudio(' + i + ')">请假理由</div>';
                     }
                     div.innerHTML = content;
                     used++;
@@ -274,6 +274,18 @@
             document.getElementById('audioStatus').textContent = '✓ 录音完成';
             document.getElementById('audioBtns').style.display = 'flex';
             console.log('Recording complete: ' + fileUrl);
+        }
+        
+        function onRecordingAutoStop(fileUrl) {
+            tempAudio = fileUrl;
+            isRecording = false;
+            var btn = document.getElementById('voiceBtn');
+            btn.classList.remove('recording');
+            btn.textContent = '🎤 请假理由';
+            btn.style.display = 'none';
+            document.getElementById('audioStatus').textContent = '✓ 录音完成 (7秒)';
+            document.getElementById('audioBtns').style.display = 'flex';
+            console.log('Recording auto-stop: ' + fileUrl);
         }
         
         function onRecordingError(error) {
