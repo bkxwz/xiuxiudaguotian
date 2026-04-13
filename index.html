@@ -301,18 +301,11 @@ function toggleRecord() {
                 new Audio(tempAudio).play();
             }
         }
-        }
         
         function showAudioPreview() {
             document.getElementById('voiceBtn').style.display = 'none';
             document.getElementById('audioStatus').textContent = '✓ 录音完成';
             document.getElementById('audioBtns').style.display = 'flex';
-        }
-        
-        function playCurrent() {
-            if (tempAudio) {
-                new Audio(tempAudio).play();
-            }
         }
         
         function reRecord() {

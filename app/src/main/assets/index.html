@@ -130,8 +130,6 @@
         var currentMonth = 0;
         var currentIdx = 0;
         var selDay = 0;
-        var mediaRecorder = null;
-        var audioChunks = [];
         var isRecording = false;
         var tempAudio = null;
         var currentAudioBlob = null;
@@ -303,18 +301,11 @@ function toggleRecord() {
                 new Audio(tempAudio).play();
             }
         }
-        }
         
         function showAudioPreview() {
             document.getElementById('voiceBtn').style.display = 'none';
             document.getElementById('audioStatus').textContent = '✓ 录音完成';
             document.getElementById('audioBtns').style.display = 'flex';
-        }
-        
-        function playCurrent() {
-            if (tempAudio) {
-                new Audio(tempAudio).play();
-            }
         }
         
         function reRecord() {
