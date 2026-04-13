@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         });
         
         String html = loadHtmlFromAssets();
-        webView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8");
+        webView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
         
         requestPermissions();
     }
