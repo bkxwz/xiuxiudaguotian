@@ -18,13 +18,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Gradle
-        uses: eskatos/gradle-action@v1
-        with:
-          gradle-version: 7.5
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Download Gradle
+        run: |
+          curl -sL https://services.gradle.org/distributions/gradle-7.5-bin.zip -o gradle.zip
+          unzip -q gradle.zip
+          export PATH=$PATH:gradle-7.5/bin
 
       - name: Build debug APK
-        run: gradle assembleDebug
+        run: |
+          export PATH=$PATH:gradle-7.5/bin
+          ./gradle-7.5/bin/gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
