@@ -108,7 +108,6 @@
                 <label><input type="radio" name="time" value="下午"> 下午</label>
             </div>
             <button class="voice-btn" id="voiceBtn" onclick="toggleRecord()">🎤 请假理由</button>
-            <button class="voice-btn speech-btn" id="speechBtn" onclick="startSpeech()" style="background:#2196F3;margin-top:8px;">🎤 语音转文字(粤语)</button>
             <div class="audio-status" id="audioStatus"></div>
             <div class="audio-btns" id="audioBtns">
                 <button class="play-btn" onclick="playCurrent()">▶ 试听</button>
@@ -303,29 +302,6 @@
             var btn = document.getElementById('voiceBtn');
             btn.classList.remove('recording');
             btn.textContent = '🎤 请假理由';
-        }
-        
-        function startSpeech() {
-            var btn = document.getElementById('speechBtn');
-            btn.disabled = true;
-            btn.textContent = '🎤 聆听中...';
-            AndroidBridge.recognizeSpeech();
-        }
-        
-        function onSpeechResult(text) {
-            var btn = document.getElementById('speechBtn');
-            btn.disabled = false;
-            btn.textContent = '🎤 语音转文字(粤语)';
-            if (text && text.length > 0) {
-                alert('识别结果: ' + text);
-            }
-        }
-        
-        function onSpeechError(error) {
-            var btn = document.getElementById('speechBtn');
-            btn.disabled = false;
-            btn.textContent = '🎤 语音转文字(粤语)';
-            alert(error);
         }
         
         function playCurrent() {
