@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.休息大过天" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.休息大过天" parent="Theme.AppCompat.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/green_available</item>
-        <item name="colorPrimaryVariant">#388E3C</item>
-        <item name="colorOnPrimary">@color/white</item>
         <item name="android:windowBackground">@color/background</item>
     </style>
 </resources>
