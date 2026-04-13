@@ -267,37 +267,40 @@
 function toggleRecord() {
             var btn = document.getElementById('voiceBtn');
             if (isRecording) {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                    mediaRecorder.stream.getTracks().forEach(function(t) { t.stop(); });
-                }
+                AndroidBridge.stopRecording();
                 btn.classList.remove('recording');
                 btn.textContent = '🎤 请假理由';
                 isRecording = false;
             } else {
-                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-                .then(function(stream) {
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = function(e) { audioChunks.push(e.data); };
-                    mediaRecorder.onstop = function() {
-                        stream.getTracks().forEach(function(t) { t.stop(); });
-                        currentAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        var reader = new FileReader();
-                        reader.onloadend = function() {
-                            tempAudio = reader.result;
-                            showAudioPreview();
-                        };
-                        reader.readAsDataURL(currentAudioBlob);
-                    };
-                    mediaRecorder.start();
-                    btn.classList.add('recording');
-                    btn.textContent = '🎤 录音中...';
-                    isRecording = true;
-                })
-                .catch(function(e) {
-                    alert('无法访问麦克风: ' + e.message + '. 请在设置中允许录音权限');
-                });
+                AndroidBridge.startRecording();
+                btn.classList.add('recording');
+                btn.textContent = '🎤 录音中...';
+                isRecording = true;
+            }
+        }
+        
+        function onRecordingComplete(base64Data) {
+            tempAudio = 'data:audio/m4a;base64,' + base64Data;
+            showAudioPreview();
+        }
+        
+        function onRecordingError(error) {
+            alert('录音失败: ' + error);
+            isRecording = false;
+            var btn = document.getElementById('voiceBtn');
+            btn.classList.remove('recording');
+            btn.textContent = '🎤 请假理由';
+        }
+        
+        function onPlayRecording(base64Data) {
+            if (tempAudio) {
+                new Audio(tempAudio).play();
+            }
+        }
+        
+        function playCurrent() {
+            if (tempAudio) {
+                new Audio(tempAudio).play();
             }
         }
         }

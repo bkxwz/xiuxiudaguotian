@@ -3,25 +3,31 @@ package com.xiuxiudaguotian;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
 import android.webkit.PermissionRequest;
+import android.util.Base64;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
     private WebView webView;
+    private MediaRecorder mediaRecorder;
+    private String currentFilePath;
+    private boolean isRecording = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -44,18 +50,13 @@ public class MainActivity extends AppCompatActivity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(false);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
+        
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
                 request.grant(request.getResources());
-            }
-            
-            @Override
-            public void onGeolocationPermissionsShowPrompt(String origin, android.webkit.GeolocationPermissions.Callback callback) {
-                callback.invoke(origin, true, false);
             }
         });
         
@@ -67,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
     
     private String loadHtmlFromAssets() {
         try {
-            InputStream is = getAssets().open("index.html");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            java.io.InputStream is = getAssets().open("index.html");
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is));
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -96,5 +97,110 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
             @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+    
+    private class AndroidBridge {
+        @JavascriptInterface
+        public void startRecording() {
+            if (isRecording) return;
+            
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        File audioDir = new File(getFilesDir(), "recordings");
+                        if (!audioDir.exists()) {
+                            audioDir.mkdirs();
+                        }
+                        currentFilePath = new File(audioDir, "recording_" + System.currentTimeMillis() + ".m4a").getAbsolutePath();
+                        
+                        mediaRecorder = new MediaRecorder();
+                        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                        mediaRecorder.setOutputFile(currentFilePath);
+                        mediaRecorder.prepare();
+                        mediaRecorder.start();
+                        isRecording = true;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        webView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.evaluateJavascript("onRecordingError('" + e.getMessage() + "')", null);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        
+        @JavascriptInterface
+        public void stopRecording() {
+            if (!isRecording || mediaRecorder == null) return;
+            
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mediaRecorder.stop();
+                        mediaRecorder.release();
+                        mediaRecorder = null;
+                        isRecording = false;
+                        
+                        // Convert to base64 and send to JS
+                        final String base64Audio = fileToBase64(currentFilePath);
+                        webView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.evaluateJavascript("onRecordingComplete('" + base64Audio + "')", null);
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        webView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                webView.evaluateJavascript("onRecordingError('" + e.getMessage() + "')", null);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        
+        @JavascriptInterface
+        public void playRecording(final String base64Data) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    webView.evaluateJavascript("onPlayRecording('" + base64Data + "')", null);
+                }
+            });
+        }
+    }
+    
+    private String fileToBase64(String filePath) {
+        try {
+            File file = new File(filePath);
+            byte[] buffer = new byte[(int) file.length()];
+            FileInputStream fis = new FileInputStream(file);
+            fis.read(buffer);
+            fis.close();
+            return Base64.encodeToString(buffer, Base64.NO_WRAP);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+            } catch (Exception e) {}
+            mediaRecorder.release();
+        }
     }
 }
